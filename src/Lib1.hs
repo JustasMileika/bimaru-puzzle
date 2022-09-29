@@ -4,6 +4,7 @@ module Lib1(
 ) where
 
 import Types
+import Data.List
 
 -- This is a state of your game.
 -- It must contain all values you might need during a game:
@@ -70,4 +71,31 @@ toggle (State o r c hl) t = emptyState
 -- IMPLEMENT
 -- Adds hint data to the game state
 hint :: State -> Document -> State
-hint (State o r c hl) (DMap x) = emptyState
+hint (State o r c hl) (DMap h) = State withHints r c hl
+      where h' = snd (h !! 0)
+            h'' (DMap x) = x
+            h''' = h'' h'
+            {-c listas = foldl (\acc (s, (DMap m)) -> if s == "head" then (\x y -> x ++ [y]) 
+            else (\x (DMap y) -> x ++ (c y))) [] listas-}
+            
+            
+            cc listas = foldl (func) [] listas
+            func acc ("head", (DMap m)) = acc ++ [DMap m]
+            func acc ("tail", DNull) = acc ++ []
+            func acc (s, (DMap m)) = acc ++ (cc m)
+            
+            temp = cc h'''
+            
+            lists = map extract temp
+            extract (DMap m) = m
+            
+            coords = map getCoords lists
+            getCoords [(col, DInteger c), (row, DInteger r)] = (r, c)
+            
+            
+            guesses = o
+            
+            
+            
+            withHints = nub (guesses ++ coords)
+            
