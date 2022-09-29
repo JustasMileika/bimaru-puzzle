@@ -10,23 +10,51 @@ import Types
 -- number of occupied rows/cols, hints, occupied cells,..
 -- You can change the right hand side as you wish but please
 -- keep the type name as is
-data State = State [String]
+data State = State {
+     occupied :: [(Int, Int)],
+     rows :: [Int],
+     columns :: [Int],
+     hintsLeft :: Int
+}
     deriving Show
 
 -- IMPLEMENT
 -- This is very initial state of your program
 emptyState :: State
-emptyState = State ["Initial state"]
+emptyState = State [] [] [] 0
 
 -- IMPLEMENT
 -- This adds game data to initial state 
 gameStart :: State -> Document -> State
-gameStart (State l) d = State $ ("Game started: " ++ show d) : l
+gameStart (State o r c hl) (DMap x) = State [(2, 5), (9, 9), (4, 6), (10, 10), (7, 1)] b a (c c')
+    where c' = snd (x !! 0)
+          c (DInteger x) = x
+          te = show c'
+          a'' = snd (x !! 1)
+          a' (DList list) = list
+          a = map (f) (a' a'')
+          f (DInteger intas) = intas
+          b'' = snd (x !! 2)
+          b = map (f) (a' b'')
+          
+
+
 
 -- IMPLEMENT
 -- renders your game board
 render :: State -> String
-render = show
+
+
+render (State o r c hl) = res (State o r c hl) ++ "\n" ++ grid'
+       where res s= firstRow ++ "\n"
+             firstRow = "  " ++ (map (intToDigit) c)
+             intToDigit num = (show num) !! 0
+             grid = ( concat (zipWith (\x y -> x ++ " " ++ y) (map show c) (replicate 10 ((replicate 10 'O') ++ "\n")))) ++ "\n"
+             grid' = foldl (\acc x -> addShip acc x) grid o
+             addShip accum coor = (first accum (indexToSplit coor)) ++ "." ++ (tail (second accum (indexToSplit coor)))
+             first gridToSplit indexToSplitAt = fst (splitAt indexToSplitAt gridToSplit)
+             second gridToSplit indexToSplitAt = snd (splitAt indexToSplitAt gridToSplit)
+             indexToSplit (x, y) = (x-1) * 11 + x * 2 + (y - 1)
 
 -- IMPLEMENT
 -- Make check from current state
@@ -37,9 +65,9 @@ mkCheck _ = Check []
 -- Toggle state's value
 -- Receive raw user input tokens
 toggle :: State -> [String] -> State
-toggle (State l) t = State $ ("Toggle " ++ show t) : l
+toggle (State o r c hl) t = emptyState
 
 -- IMPLEMENT
 -- Adds hint data to the game state
 hint :: State -> Document -> State
-hint (State l) h = State $ ("Hint " ++ show h) : l
+hint (State o r c hl) (DMap x) = emptyState
