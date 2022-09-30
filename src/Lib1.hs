@@ -27,30 +27,38 @@ emptyState = State [] [] [] 0
 -- IMPLEMENT
 -- This adds game data to initial state 
 gameStart :: State -> Document -> State
-gameStart (State o r c hl) (DMap x) = State [(2, 5), (9, 9), (4, 6), (10, 10), (7, 1)] b a (c c')
-    where c' = snd (x !! 0)
-          c (DInteger x) = x
-          te = show c'
-          a'' = snd (x !! 1)
-          a' (DList list) = list
-          a = map (f) (a' a'')
-          f (DInteger intas) = intas
-          b'' = snd (x !! 2)
-          b = map (f) (a' b'')
+gameStart _ dmap = State solved1 occupiedRows occupiedCols numberOfHints
+    where 
+          {- solved puzzle: list of coordinates (row, column)-}
           
-
-
+          solved1 = [(2, 1), (2, 10), (3, 3), (3, 4), (3, 5), (3, 7), (4, 7), (5, 3), (5, 4), (5, 5), (5, 7), (6, 7), (6, 10), (7, 10), (9, 8), (9, 10), (8, 2), (8, 3), (9, 5), (9, 6) ]
+          {-solved2 = [(2, 1), (2, 10), (3, 3), (3, 4), (3, 5), (3, 7), (4, 7), (5, 3), (5, 4), (5, 5), (5, 7), (6, 7), (6, 10), (7, 10), (9, 8), (9, 10), (8, 5), (8, 6), (9, 2), (9, 3) ] -}
+          
+          getDocByStringFromMap (DMap map) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull map 
+          
+          numberOfHintsDInt = getDocByStringFromMap dmap "number_of_hints"
+          occupiedColsDList = getDocByStringFromMap dmap "occupied_cols"
+          occupiedRowsDList = getDocByStringFromMap dmap "occupied_rows"
+          
+          getIntFromDInt (DInteger i) = i
+          getListFromDList (DList l) = l
+          
+          occupiedColsDInts = getListFromDList occupiedColsDList
+          occupiedRowsDInts = getListFromDList occupiedRowsDList
+          
+          numberOfHints = getIntFromDInt numberOfHintsDInt
+          occupiedCols = map getIntFromDInt occupiedColsDInts
+          occupiedRows = map getIntFromDInt occupiedRowsDInts
 
 -- IMPLEMENT
 -- renders your game board
 render :: State -> String
 
-
 render (State o r c hl) = res (State o r c hl) ++ "\n" ++ grid'
        where res s= firstRow ++ "\n"
              firstRow = "  " ++ (map (intToDigit) c)
              intToDigit num = (show num) !! 0
-             grid = ( concat (zipWith (\x y -> x ++ " " ++ y) (map show c) (replicate 10 ((replicate 10 'O') ++ "\n")))) ++ "\n"
+             grid = ( concat (zipWith (\x y -> x ++ " " ++ y) (map show r) (replicate 10 ((replicate 10 'O') ++ "\n")))) ++ "\n"
              grid' = foldl (\acc x -> addShip acc x) grid o
              addShip accum coor = (first accum (indexToSplit coor)) ++ "." ++ (tail (second accum (indexToSplit coor)))
              first gridToSplit indexToSplitAt = fst (splitAt indexToSplitAt gridToSplit)
@@ -60,7 +68,9 @@ render (State o r c hl) = res (State o r c hl) ++ "\n" ++ grid'
 -- IMPLEMENT
 -- Make check from current state
 mkCheck :: State -> Check
-mkCheck _ = Check []
+mkCheck (State o r c hl) = Check coordin
+        where coordin = map func o
+              func (x, y) = Coord (y-1) (x-1)
 
 -- IMPLEMENT
 -- Toggle state's value
@@ -78,6 +88,10 @@ hint (State o r c hl) (DMap h) = State withHints r c hl
             {-c listas = foldl (\acc (s, (DMap m)) -> if s == "head" then (\x y -> x ++ [y]) 
             else (\x (DMap y) -> x ++ (c y))) [] listas-}
             
+            hintCoordsDMap = getDocByStringFromMap (DMap h) "coords"
+
+            getDocByStringFromMap (DMap map) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull map 
+
             
             cc listas = foldl (func) [] listas
             func acc ("head", (DMap m)) = acc ++ [DMap m]
@@ -90,7 +104,7 @@ hint (State o r c hl) (DMap h) = State withHints r c hl
             extract (DMap m) = m
             
             coords = map getCoords lists
-            getCoords [(col, DInteger c), (row, DInteger r)] = (r, c)
+            getCoords [(col, DInteger c), (row, DInteger r)] = (r + 1, c + 1)
             
             
             guesses = o
