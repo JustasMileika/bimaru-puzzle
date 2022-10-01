@@ -4,8 +4,8 @@ module Lib1(
 ) where
 
 import Types
-import Data.List
-import Data.Char
+import Data.List(nub)
+import Data.Char(isDigit, digitToInt)
 
 {- solved puzzle: list of coordinates (row, column)-}
           
@@ -21,7 +21,7 @@ data State = State {
      occupied :: [(Int, Int)],
      rows :: [Int],
      columns :: [Int],
-     hintsLeft :: Int
+     hintAmount :: Int
 }
     deriving Show
 
@@ -33,12 +33,12 @@ emptyState = State [] [] [] 0
 -- IMPLEMENT
 -- This adds game data to initial state 
 gameStart :: State -> Document -> State
-gameStart _ dmap = State [] occupiedRows occupiedCols numberOfHints
-    where getDocByStringFromMap (DMap map) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull map 
+gameStart _ initState = State [] occupiedRows occupiedCols numberOfHints
+    where getDocByStringFromMap (DMap initStateList) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull initStateList 
           
-          numberOfHintsDInt = getDocByStringFromMap dmap "number_of_hints"
-          occupiedColsDList = getDocByStringFromMap dmap "occupied_cols"
-          occupiedRowsDList = getDocByStringFromMap dmap "occupied_rows"
+          numberOfHintsDInt = getDocByStringFromMap initState "number_of_hints"
+          occupiedColsDList = getDocByStringFromMap initState "occupied_cols"
+          occupiedRowsDList = getDocByStringFromMap initState "occupied_rows"
           
           getIntFromDInt (DInteger i) = i
           getListFromDList (DList l) = l
@@ -54,7 +54,7 @@ gameStart _ dmap = State [] occupiedRows occupiedCols numberOfHints
 -- renders your game board
 render :: State -> String
 
-render (State o r c hl) = firstRow ++ "\n" ++ gridWithShips
+render (State o r c _) = firstRow ++ "\n" ++ gridWithShips
        where 
              firstRow = "\n" ++ "  " ++ (map (intToDigit) c)
              
@@ -63,7 +63,7 @@ render (State o r c hl) = firstRow ++ "\n" ++ gridWithShips
              emptyGrid = ( concat (zipWith (\x y -> x ++ " " ++ y) (map show r) (replicate 10 ((replicate 10 'O') ++ "\n")))) ++ "\n"
              
              gridWithShips = foldl (\acc x -> addShip acc x) emptyGrid o
-             addShip accum coor = (firstPartOfArray accum (indexToSplit coor)) ++ "+" ++ (tail (secondPartOfArray accum (indexToSplit coor)))
+             addShip accum coor = (firstPartOfArray accum (indexToSplit coor)) ++ "x" ++ (tail (secondPartOfArray accum (indexToSplit coor)))
              
              firstPartOfArray gridToSplit indexToSplitAt = fst (splitAt indexToSplitAt gridToSplit)
              secondPartOfArray gridToSplit indexToSplitAt = snd (splitAt indexToSplitAt gridToSplit)
@@ -73,7 +73,7 @@ render (State o r c hl) = firstRow ++ "\n" ++ gridWithShips
 -- IMPLEMENT
 -- Make check from current state
 mkCheck :: State -> Check
-mkCheck (State o r c hl) = Check coordin
+mkCheck (State o _ _ _) = Check coordin
         where coordin = map func o
               func (x, y) = Coord (y-1) (x-1)
 
@@ -82,13 +82,13 @@ mkCheck (State o r c hl) = Check coordin
 -- Receive raw user input tokens
 toggle :: State -> [String] -> State
 toggle (State o r c hl) t = State withToggle r c hl
-        where coordPair = if length t /= 2 then [] else (if row /= 0 && col /= 0 then [(row, col)] else [])
+        where coordPair = if length t /= 2 then [] else (if rowCoord /= 0 && colCoord /= 0 then [(rowCoord, colCoord)] else [])
                   where getIntFromString str
                             | length str == 1 && isDigit (str !! 0) && str /= "0" = digitToInt (str !! 0)
                             | str == "10" = 10
                             | otherwise = 0
-                        row = getIntFromString (t !! 0)
-                        col = getIntFromString (t !! 1)
+                        rowCoord = getIntFromString (t !! 0)
+                        colCoord = getIntFromString (t !! 1)
               
               withToggle :: [(Int, Int)]
               withToggle = if coordPair == [] then o else (if (coordPair !! 0) `elem` o then removeItem (coordPair !! 0) o else o ++ coordPair)
@@ -103,7 +103,7 @@ hint :: State -> Document -> State
 hint (State o r c hl) (DMap h) = State withHints r c hl
       where hintCoordsDMap = getDocByStringFromMap (DMap h) "coords"
 
-            getDocByStringFromMap (DMap map) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull map 
+            getDocByStringFromMap (DMap hintList) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull hintList 
             
             listOfDMaps = parseHintDMap hintCoordsDMap
             
@@ -114,11 +114,11 @@ hint (State o r c hl) (DMap h) = State withHints r c hl
             
             listOfCoords = map extractCoords listOfDMaps
 
-            extractCoords dMapOfCoordTuples = (row, col)
-                          where row = getIntFromDInt rowDInt + 1
+            extractCoords dMapOfCoordTuples = (rowCoord, colCoord)
+                          where rowCoord = getIntFromDInt rowDInt + 1
                                 rowDInt = getDocByStringFromMap dMapOfCoordTuples "row"
                                 
-                                col = getIntFromDInt colDInt + 1
+                                colCoord = getIntFromDInt colDInt + 1
                                 colDInt = getDocByStringFromMap dMapOfCoordTuples "col"
                                 
                                 getIntFromDInt (DInteger i) = i
