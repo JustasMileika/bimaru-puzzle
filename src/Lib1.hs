@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 module Lib1(
-    State, emptyState, gameStart, render, mkCheck, toggle, hint
+    State(..), emptyState, gameStart, render, mkCheck, toggle, hint
 ) where
 
 import Types
@@ -23,7 +23,7 @@ data State = State {
      columns :: [Int],
      hintAmount :: Int
 }
-    deriving Show
+    deriving (Show, Eq)
 
 -- IMPLEMENT
 -- This is very initial state of your program
@@ -35,13 +35,15 @@ emptyState = State [] [] [] 0
 gameStart :: State -> Document -> State
 gameStart _ initState = State [] occupiedRows occupiedCols numberOfHints
     where getDocByStringFromMap (DMap initStateList) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull initStateList 
-          
+          getDocByStringFromMap _ _ = DNull
           numberOfHintsDInt = getDocByStringFromMap initState "number_of_hints"
           occupiedColsDList = getDocByStringFromMap initState "occupied_cols"
           occupiedRowsDList = getDocByStringFromMap initState "occupied_rows"
           
           getIntFromDInt (DInteger i) = i
+          getIntFromDInt _ = 0
           getListFromDList (DList l) = l
+          getListFromDList _ = []
           
           occupiedColsDInts = getListFromDList occupiedColsDList
           occupiedRowsDInts = getListFromDList occupiedRowsDList
@@ -49,6 +51,7 @@ gameStart _ initState = State [] occupiedRows occupiedCols numberOfHints
           numberOfHints = getIntFromDInt numberOfHintsDInt
           occupiedCols = map getIntFromDInt occupiedColsDInts
           occupiedRows = map getIntFromDInt occupiedRowsDInts
+          
 
 -- IMPLEMENT
 -- renders your game board
@@ -104,13 +107,15 @@ hint (State o r c hl) (DMap h) = State withHints r c hl
       where hintCoordsDMap = getDocByStringFromMap (DMap h) "coords"
 
             getDocByStringFromMap (DMap hintList) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull hintList 
-            
+            getDocByStringFromMap _ _ = DNull
             listOfDMaps = parseHintDMap hintCoordsDMap
             
             parseHintDMap (DMap dMapToParse) = foldl (parseRec) [] dMapToParse
+            parseHintDMap _ = []
             parseRec acc ("head", (DMap m)) = acc ++ [DMap m]
             parseRec acc ("tail", DNull) = acc
             parseRec acc (_, (DMap m)) = acc ++ (parseHintDMap (DMap m))
+            parseRec _ _ = []
             
             listOfCoords = map extractCoords listOfDMaps
 
@@ -122,5 +127,8 @@ hint (State o r c hl) (DMap h) = State withHints r c hl
                                 colDInt = getDocByStringFromMap dMapOfCoordTuples "col"
                                 
                                 getIntFromDInt (DInteger i) = i
+                                getIntFromDInt _ = 0
                                 
             withHints = nub (o ++ listOfCoords)
+hint _ _ = emptyState
+    
