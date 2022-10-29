@@ -35,11 +35,52 @@ toYamlTests = testGroup "Document to yaml"
         renderDocument (DMap[("DMap1", DMap[("InnerDMap1", DInteger 1), ("InnerMap2", DString "word")])] ) @?= mapOfMaps
     , testCase "map of lists of maps" $
         renderDocument (DMap [("coords", DList[DMap[("col", DInteger 1),("row", DInteger 6)], DMap[("col", DInteger 1),("row", DInteger 9)]])]) @?= mapOfListsOfMaps
-      
+    , testCase "tricky - nested maps and lists, edge cases" $
+        renderDocument (DMap [("key1", DMap [("key2", DList [DInteger 1, DMap [("key3", DList [DInteger 1, DInteger 3, DNull, DMap [("", DNull)], DMap []]), ("key4", DString "")], DNull])]), ("key5", DList [])]) @?= tricky  
+       
     -- IMPLEMENT more test cases:
     -- * other primitive types/values
     -- * nested types
   ]
+
+--same as trickyOriginal just changed indentation and
+--slightly modified format (DMap in DList has "-" before map key in the same line, eg. "- key3:") 
+tricky :: String
+tricky = unlines [
+    "---",
+    "key1:",
+    "  key2:",
+    "  - 1",
+    "  - key3:",
+    "    - 1",
+    "    - 3",
+    "    - null",
+    "    - '': null",
+    "    - []",
+    "    key4: ''",
+    "  - null",
+    "key5: []"
+  ]
+{-
+trickyOriginal :: String
+trickyOriginal = unlines [
+    "---",
+    "key1: ",
+    " key2: ",
+    " - 1",
+    " - ",
+    " key3: ",
+    " - 1",
+    " - 3",
+    " - null",
+    " - ",
+    " '': null",
+    " - []",
+    " key4: ''",
+    " - null",
+    "key5: []"
+  ]
+  -}
 
 mapOfMixedLiterals :: String
 mapOfMixedLiterals = unlines [

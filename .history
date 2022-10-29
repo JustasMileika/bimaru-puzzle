@@ -1,3 +1,21 @@
+hint 54154
+check
+show
+sho
+hint 51
+show
+toggle 1 1
+show
+hint 5555
+toggle 555 0005555
+show
+toggle 1 1
+show
+toggle 0 0
+check
+show
+hint 7
+show
 check
 show
 show
@@ -80,7 +98,3 @@ how
 hint
 show
 show
-show
-show fsdf
-draw
-draw 
