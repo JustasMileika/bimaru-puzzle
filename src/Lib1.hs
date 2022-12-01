@@ -4,6 +4,7 @@ module Lib1(
 ) where
 
 import Types
+
 import Data.List(nub)
 import Data.Char(isDigit, digitToInt)
 
@@ -17,6 +18,7 @@ import Data.Char(isDigit, digitToInt)
 -- number of occupied rows/cols, hints, occupied cells,..
 -- You can change the right hand side as you wish but please
 -- keep the type name as is
+
 data State = State {
      occupied :: [(Int, Int)],
      rows :: [Int],
@@ -24,6 +26,7 @@ data State = State {
      hintAmount :: Int
 }
     deriving (Show, Eq)
+
 
 -- IMPLEMENT
 -- This is very initial state of your program
@@ -52,11 +55,9 @@ gameStart _ initState = State [] occupiedRows occupiedCols numberOfHints
           occupiedCols = map getIntFromDInt occupiedColsDInts
           occupiedRows = map getIntFromDInt occupiedRowsDInts
           
-
 -- IMPLEMENT
 -- renders your game board
 render :: State -> String
-
 render (State o r c _) = firstRow ++ "\n" ++ gridWithShips
        where 
              firstRow = "\n" ++ "  " ++ (map (intToDigit) c)
@@ -131,4 +132,3 @@ hint (State o r c hl) (DMap h) = State withHints r c hl
                                 
             withHints = nub (o ++ listOfCoords)
 hint _ _ = emptyState
-    

@@ -1,24 +1,142 @@
 import Test.Tasty
 import Test.Tasty.HUnit
+import Test.Tasty.QuickCheck
+import Data.String.Conversions
+import Data.Yaml as Y ( encodeWith, defaultEncodeOptions, defaultFormatOptions, setWidth, setFormat)
+
 import Lib1 (State(..))
 import Lib2 (renderDocument, gameStart, hint)
+import Lib3 (parseDocument)
 import Types (Document(..))
---import Data.String (String)
 
 main :: IO ()
 main = defaultMain (testGroup "Tests" [
   toYamlTests,
+  fromYamlTests,
   gameStartTests,
-  hintTests])
+  hintTests,
+  properties])
+
+properties :: TestTree
+properties = testGroup "Properties" [golden, dogfood]
+
+friendlyEncode :: Document -> String
+friendlyEncode doc = cs (Y.encodeWith (setFormat (setWidth Nothing defaultFormatOptions) defaultEncodeOptions) doc)
+
+
+golden :: TestTree
+golden = testGroup "Handles foreign rendering"
+  [
+    testProperty "parseDocument (Data.Yaml.encode doc) == doc" $
+      \doc -> parseDocument (friendlyEncode doc) == Right doc
+  ]
+
+dogfood :: TestTree
+dogfood = testGroup "Eating your own dogfood"
+  [  
+    testProperty "parseDocument (renderDocument doc) == doc" $
+      \doc -> parseDocument (renderDocument doc) == Right doc
+  ]
+
+fromYamlTests :: TestTree
+fromYamlTests = testGroup "Document from yaml"
+  [ 
+    --  testCase "goldenInput" $
+    --     parseDocument (friendlyEncode (goldenDoc1)) @?= Left (friendlyEncode (goldenDoc1))
+    -- ,testCase "goldenInput1" $
+    --     parseDocument (friendlyEncode (DList [DInteger (-6),DMap [("y",DList [DString "onHrx3",DInteger (-5)]),("hilTiLyK",DString "  E K "),("wzKUk",DInteger (-6)),("MSXAnF",DInteger (-4))],DString ""])) @?= Left (friendlyEncode (DList [DInteger (-6),DMap [("y",DList [DString "onHrx3",DInteger (-5)]),("hilTiLyK",DString "  E K "),("wzKUk",DInteger (-6)),("MSXAnF",DInteger (-4))],DString ""]))
+    -- , testCase "dogfood" $
+    --     parseDocument (renderDocument dogFood1) @?= Left (renderDocument dogFood1)  
+     testCase "null" $
+        parseDocument "null" @?= Right DNull
+    -- IMPLEMENT more test cases:
+    -- * other primitive types/values
+    -- * nested types
+  ]
+
+
+kazkas = unlines[
+  "dmUXglho: 12",
+  "JYslPBdkZ:",
+  "-",
+  "  - {}",
+  "  -",
+  "    - \"lXadBcv8\"",
+  "    - []",
+  "    - YKRRhn: ''",
+  "{}  - \"PIwf 2U1   \"\n"]
+
+goldenDoc1 = DMap [("nC",DInteger (-55)),("lkR",DMap [("PvumUHu",DMap []),("NkDUfqo",DMap [("OqdueV",DMap [("FtfIvGdCy",DInteger 74),("SnBAQ",DMap [("KLrtQOsNg",DString "O1 ")]),("tRmebF",DMap [("PVY",DString "   y  ")]),("SQ",DList [DInteger (-41),DMap [("btBoROY",DList [DList [DMap [("kcrglhRI",DList [DString "K 2y  7cHjWZoM S",DMap [("ajWjFXDY",DInteger 42),("ps",DInteger (-39)),("csdkRM",DMap [("nn",DString "X  m8"),("DS",DString "T"),("RYiDe",DString " T0RdMBf  B0cy ")]),("lf",DMap [("GBkLmaHz",DInteger 5),("n",DString "3  6 2S3b1h "),("bjIgejaTE",DInteger (-28)),("Pf",DString "2b H dD  ZY631E")])],DString "8 2Cl5lJoR z",DList [DMap [("s",DMap [("LugYj",DList [DInteger (-36)]),("TbrMXm",DInteger 73),("cHmXGCMJ",DString "8"),("poDd",DInteger 43)])]]]),("QQIWjL",DInteger 55),("SQu",DString "")]],DList [DMap [],DInteger 75,DList [DString "1 n  ",DList []],DString "  p vJy jn123eD"],DString "We Pl7qM k8 Ru"]),("kKivmJhMWQ",DList [DInteger (-54),DList [DInteger 79,DList [DList [DMap [("sFH",DMap [("PFQWvTsj",DInteger 19),("T",DList [DInteger (-3)]),("nAgcp",DInteger 34)]),("JNVhzlBEIW",DString "867 iMA0 mu"),("nUi",DList []),("Q",DList [DMap [("zs",DString "Cn")],DString "28"])],DString "1",DInteger (-77)],DList [DInteger 34,DString "bLH  Wfy"]],DString "J  GP7  m6Vx",DString ""]])]])])]),("t",DMap [])]),("cZBd",DMap [("sYoCld",DList [DMap [("trY",DList [DInteger 18,DInteger (-39),DList [DString "1t7FUK",DMap [("nAbTck",DString ""),("iSod",DInteger 52)],DMap [("GDJM",DString "9uJ e z6"),("ZLU",DList [DMap [("xJRhFEydSw",DList [])]]),("vKPXruMW",DMap [("raL",DList []),("WO",DInteger (-40)),("j",DList []),("HF",DList [DMap [("GGAZfFxA",DString "8h01  r4 tVE4s2"),("zuDMJ",DInteger 35)],DInteger (-9)])])]],DList [DString "F ",DMap [("RJ",DMap [("FAJP",DString "MKyXs j7"),("nfF",DMap [("UDU",DString "  1 vf"),("VLK",DInteger (-23)),("uy",DInteger 81)]),("Yvu",DMap [("CbN",DInteger 0),("jCixXil",DInteger 73)])]),("dDjOjfXf",DList [DString "p0 q",DMap [("XB",DInteger 70),("nvGSs",DString "7zj8j G ")]])],DString " 92  68r ghs  ",DMap [("nEVZClbI",DInteger (-49)),("lRP",DString " nL9eU0"),("K",DMap [("Do",DList [DMap [("oqONOaQ",DList [DString "J4 "]),("PstXrybQo",DList [DMap [],DString "Y8T JB4 X"])],DInteger 54,DList [DList [DMap [("d",DList [DString ""]),("cFhejrmcH",DString "")],DInteger 12]],DInteger 37]),("Dvc",DList []),("AWNrDsj",DList [DInteger (-60),DMap [("ksAAosSR",DList [DInteger 31,DString " 8u6 ",DList [DString "rs mxPqzgfn",DMap [("ucgpLHP",DString "l16p37NBK Q qI"),("wIAsE",DList [DList [DInteger (-47),DInteger 30,DInteger 73],DInteger (-67),DString "h D2x4xQ  c",DString ""]),("npm",DString "Ps sEIW1 qKu6  "),("fDDSbHjD",DString "s4b v")]],DInteger 8])]]),("ZIC",DMap [("K",DMap [])])])]]]),("sgwhBVfbg",DString "m  x8")]]),("BBYoTJEJax",DList [DMap [("XZctdh",DInteger (-48)),("yfblnFBKk",DMap [("zK",DString "2  4 p K r q2 ")])],DList [],DString "f4 7 ",DList [DList [DList []],DMap [("CupXQYIL",DString "2 tw u"),("HbOKVUJuAd",DInteger (-34))]]]),("L",DMap [("MqTy",DInteger 26)])]),("orXiYWlAi",DInteger (-59))]
+
+ziurim = unlines[
+  "JYslPBdkZ:",
+  "-",
+  "  - {}",
+  "  -",
+  "    - \"lXadBcv8\"",
+  "    - []",
+  "    - YKRRhn: ''",
+  "{}  - \"PIwf 2U1   \"",
+  "  - \"x6w3C 78 sU \"",
+  "- -6",
+  "- ''"
+ ]
+
+testukas = DMap [
+  ("JYslPBdkZ",DList [
+  DList [
+    DMap [],
+    DList [
+      DString "lXadBcv8",
+      DList [],
+      DMap [("YKRRhn",DString "")]
+      ],
+    DString "PIwf 2U1   ",
+    DString "x6w3C 78 sU "],
+  DInteger (-6),
+  DString ""])]
+
+
+dogfoodt = unlines[
+  "dmUXglho: 12",
+  "JYslPBdkZ:",
+  "-",
+  "  - {}",
+  "  -",
+  "    - \"lXadBcv8\"\n    - []",
+  "    - YKRRhn: ''",
+  "  - \"PIwf 2U1   \"",
+  "  - \"x6w3C 78 sU \"",
+  "- -6",
+  "- ''",
+  "FOtYC: \"9HeaWS4 r NM8j \"",
+  "zXTGGzqvxQ: \"  H n a6U\""]
+
+dogFood1 = DMap [
+  ("dmUXglho",DInteger 12),
+  ("JYslPBdkZ", DList [
+    DList [
+      DMap [],
+      DList [
+        DString "lXadBcv8",
+        DList [],
+        DMap [("YKRRhn",DString "")]
+        ],
+      DString "PIwf 2U1   ",
+      DString "x6w3C 78 sU "],
+    DInteger (-6),
+    DString ""]),
+  ("FOtYC",DString "9HeaWS4 r NM8j "),
+  ("zXTGGzqvxQ",DString "  H n a6U")]
 
 toYamlTests :: TestTree
 toYamlTests = testGroup "Document to yaml"
   [   testCase "null" $
-        renderDocument DNull @?= "---\nnull"
+        renderDocument DNull @?= "null"
     , testCase "int" $
-        renderDocument (DInteger 5) @?= "---\n5"
+        renderDocument (DInteger 5) @?= "5"
     , testCase "string" $
-        renderDocument (DString "word") @?= "---\n\"word\""
+        renderDocument (DString "word") @?= "\"word\""
     , testCase "list of ints" $
         renderDocument (DList [DInteger 5, DInteger 6]) @?= listOfInts
     , testCase "list of strings" $
@@ -45,9 +163,10 @@ toYamlTests = testGroup "Document to yaml"
 
 --same as trickyOriginal just changed indentation and
 --slightly modified format (DMap in DList has "-" before map key in the same line, eg. "- key3:") 
+
+
 tricky :: String
 tricky = unlines [
-    "---",
     "key1:",
     "  key2:",
     "  - 1",
@@ -56,7 +175,7 @@ tricky = unlines [
     "    - 3",
     "    - null",
     "    - '': null",
-    "    - []",
+    "    - {}",
     "    key4: ''",
     "  - null",
     "key5: []"
@@ -84,22 +203,19 @@ trickyOriginal = unlines [
 
 mapOfMixedLiterals :: String
 mapOfMixedLiterals = unlines [
-      "---"
-    , "DNull: null"
+      "DNull: null"
     , "DString: \"word\""
     , "DInteger: 5"
  ]
 
 listOfNulls :: String
 listOfNulls = unlines [
-      "---"
-    , "- null"
+      "- null"
     , "- null"
  ]
 listOfLists :: String
 listOfLists = unlines [
-      "---"
-    , "-"
+      "-"
     , "  - null"
     , "  - null"
     , "-"
@@ -109,20 +225,17 @@ listOfLists = unlines [
 
 listOfInts :: String
 listOfInts = unlines [
-      "---"
-    , "- 5"
+      "- 5"
     , "- 6"
   ]
 listOfStrings :: String
 listOfStrings = unlines [
-      "---"
-    , "- \"first\""
+      "- \"first\""
     , "- \"second\""
   ]
 
 mapOfLists :: String
 mapOfLists = unlines [
-  "---",
   "DList1:",
   "- 1",
   "- \"hello\"",
@@ -135,14 +248,12 @@ mapOfLists = unlines [
 
 mapOfMaps :: String
 mapOfMaps = unlines [
-  "---",
   "DMap1:",
   "  InnerDMap1: 1",
   "  InnerMap2: \"word\""
  ]
 mapOfListsOfMaps :: String 
 mapOfListsOfMaps = unlines [
-  "---",
   "coords:",
   "- col: 1",
   "  row: 6",
@@ -309,3 +420,5 @@ docNoRow = DMap [("coords",DMap [("head",DMap [("col",DInteger 2),("NOT row",DIn
 docNoDInt :: Document
 docNoDInt = DMap [("coords",DMap [("head",DMap [("col",DInteger 2),("row",DString "8")]),
         ("tail", DNull)])]
+
+
