@@ -2,9 +2,8 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Lib2(renderDocument, hint, gameStart) where
 
-import Types ( Document(..) )
+import Types (Document(..))
 import Lib1 (State(..))
-
 import Data.List(nub)
 
 -- IMPLEMENT
@@ -13,19 +12,22 @@ import Data.List(nub)
 -- IMPLEMENT
 -- Renders document to yaml
 renderDocument :: Document -> String
-renderDocument doc = "---\n" ++ convert' doc 0 True
+renderDocument doc = convert' doc 0 True
 
 
 convert' :: Document -> Int -> Bool -> String
 
 convert' (DInteger intas) _ _ = show intas
 
+
 convert' (DNull) _ _ = "null"
 convert' (DString "") _ _ = "''"
+convert' (DList []) _ _ = "[]"
+convert' (DMap []) _ _ = "{}"
 convert' (DString str) _ _ = show str
 
 convert' (DMap dmap) indent needToIndent = (foldl mapHelper' "" dmap) 
-    where mapHelper' acc (key, (DMap [])) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ (if key == "" then "''" else key) ++ ": " ++ "[]\n"
+    where mapHelper' acc (key, (DMap [])) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ (if key == "" then "''" else key) ++ ": " ++ "{}\n"
           mapHelper' acc (key, (DMap mapas)) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ (if key == "" then "''" else key) ++ ":\n" ++ (convert' (DMap mapas) (indent + 2) True) 
           mapHelper' acc (key, (DList [])) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ (if key == "" then "''" else key) ++ ": " ++ "[]\n"
           mapHelper' acc (key, (DList list)) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ (if key == "" then "''" else key) ++ ":\n" ++ (convert' (DList list) (indent) True)
@@ -33,8 +35,8 @@ convert' (DMap dmap) indent needToIndent = (foldl mapHelper' "" dmap)
           
           
 convert' (DList dlist) indent needToIndent = (foldl listHelper' "" dlist)
-    where listHelper' acc (DMap []) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ "- " ++ "[]\n"
-          listHelper' acc (DMap mapas) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ "- " ++ (convert' (DMap ([(head mapas)])) (indent + 2) False) ++ (convert' (DMap (tail mapas)) (indent + 2) True)
+    where listHelper' acc (DMap []) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ "- " ++ "{}\n"
+          listHelper' acc (DMap mapas) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ "- " ++ (convert' (DMap ([(head mapas)])) (indent + 2) False) ++ (if length mapas == 1 then "" else convert' (DMap (tail mapas)) (indent + 2) True)
           listHelper' acc (DList []) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ "- " ++ "[]\n"
           listHelper' acc (DList list) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ "-\n" ++ (convert' (DList list) (indent + 2) True)
           listHelper' acc doc = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ "- " ++ (convert' doc indent True) ++ "\n"
@@ -44,6 +46,7 @@ find _ [] = False
 find n (x:xs)
   | x == n = True
   | otherwise = find n xs
+
 
 -- IMPLEMENT
 -- This adds game data to initial state
