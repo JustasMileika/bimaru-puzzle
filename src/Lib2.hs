@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Lib2(renderDocument, hint, gameStart) where
 
-import Types ( ToDocument(..), Document(..), Check )
+import Types (Document(..))
 import Lib1 (State(..))
 import Data.List(nub)
 

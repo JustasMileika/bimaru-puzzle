@@ -5,122 +5,124 @@ module Lib3(hint, gameStart, parseDocument, GameStart, Hint) where
 import Types ( Document(..), FromDocument, fromDocument )
 import Lib1 (State(..))
 import Data.List(nub)
-import Data.Either
-import Text.Read (readEither, readMaybe)
-import Data.Char (isDigit, isSpace)
+import Data.Either(isRight)
+import Text.Read (readMaybe)
+import Data.Char (isSpace)
 import Data.Maybe (isNothing)
 
 -- IMPLEMENT
 -- Parses a document from yaml
 parseDocument :: String -> Either String Document
 parseDocument "" = Left "Empty string is invalid"
---parseDocument a = Left ("bybys man " ++ show a)
 parseDocument str = case getValue str of
-            Left msg -> Left ("Could not parse line:" ++ msg)
+            Left (msg, _) -> Left ("Could not parse from line: " ++ msg)
             Right doc -> Right doc
---parseDocument str =  Left ( "va cia " ++ show str)
-parseDocument _ = Left "Some error occured"
 
-getValue :: String -> Either String Document
+getValue :: String -> Either (String, Bool) Document
 getValue str
-     | isRight a = a
-     | isRight b = b
-     | isRight c = c
-     | isRight d = convertToDList d
-     | isRight e = convertToDMap e
+     | isRight dint = dint
+     | isRight dstring = dstring
+     | isRight dnull = dnull
+     | isRight dlist = convertToDList dlist
+     | isRight dmap = convertToDMap dmap
      | otherwise = Left (
-        if last' (getMessage d) == Just '$' then getMessage d
-        else if last' (getMessage e) == Just '$' then getMessage e
-        else getMessage c) -- Error message
+                    if statusDlist == True then (messageDList, statusDlist)
+                    else if statusDmap == True then (messageDmap, statusDmap)
+                    else (messageDnull, statusDnull))                                                                        
      where
-        a = parseInt str
-        b = parseString str
-        c = parseNull str
-        d = parseList str
-        e = parseMap str
+        dint = parseInt str
+        dstring = parseString str
+        dnull = parseNull str
+        dlist = parseList str
+        dmap = parseMap str
+        (messageDList, statusDlist) = fromLeft dlist
+        (messageDmap, statusDmap) = fromLeft dmap
+        (messageDnull, statusDnull) = fromLeft dnull
 
 
-parseString :: String -> Either String Document
+parseString :: String -> Either (String, Bool) Document
 parseString str
-           | length c == 2 && (((head' c == Just '[') && (last' c == Just ']'))
-            || ((head' c == Just '{') && (last' c == Just '}'))) = Left (b ++ "$")
-           | length c == 2 && (head' c == Just '\'') && (last' c == Just '\'') = Right (DString "") 
-           | (head' c == Just '\"') && (last' c == Just '\"') && null e = Right (DString (removeLast $ removeFirst c))
-           | (head' c == Just '\'') && (last' c == Just '\'') && null e = Right (DString (removeLast $ removeFirst c))
-           | c /= trim "null" && isNothing (readMaybe c :: Maybe Int) && head' c /= Just '-'
-             && last' (trim c) /= Just ':' && null e = Right (DString c)
-           | otherwise = Left (b ++ "$")     
-            where (b, _) = breakOn '\n' str
-                  c = trim b
-                  (d, e) = breakOn ':' c
+           | length trimmedPart == 2 && (((head' trimmedPart == Just '[') && (last' trimmedPart == Just ']'))
+            || ((head' trimmedPart == Just '{') && (last' trimmedPart == Just '}'))) = Left (firstPart, True)
+           | length trimmedPart == 2 && (head' trimmedPart == Just '\'') && (last' trimmedPart == Just '\'') = Right (DString "") 
+           | (head' trimmedPart == Just '\"') && (last' trimmedPart == Just '\"') && null textAfterColon = Right (DString (removeLast $ removeFirst trimmedPart))
+           | (head' trimmedPart == Just '\'') && (last' trimmedPart == Just '\'') && null textAfterColon = Right (DString (removeLast $ removeFirst trimmedPart))
+           | trimmedPart /= trim "null" && isNothing (readMaybe trimmedPart :: Maybe Int)
+             && (head' trimmedPart /= Just '-' || (head' trimmedPart == Just '-' && length trimmedPart > 1 && trimmedPart !! 1 /= ' '))
+             && last' trimmedPart /= Just ':' && null textAfterColon = Right (DString trimmedPart)
+           | otherwise = Left (firstPart, True)     
+            where (firstPart, _) = breakOn '\n' str
+                  trimmedPart = trim firstPart
+                  (_, textAfterColon) = breakOn ':' trimmedPart
 
 
-parseInt :: String -> Either String Document
-parseInt str = case  readMaybe (replaceSpaceWithTrash (trim b))  :: Maybe Int of
-    Nothing -> Left (b ++ "$")
+parseInt :: String -> Either (String, Bool) Document
+parseInt str = case  readMaybe (replaceSpaceWithTrash (trim firstPart))  :: Maybe Int of
+    Nothing -> Left (firstPart, True)
     Just num -> Right (DInteger num)
-    where (b, _) = breakOn '\n'  str
+    where (firstPart, _) = breakOn '\n'  str
           replaceSpaceWithTrash = map (\c -> if c==' ' then '@'; else c)
 
 
-parseNull :: String -> Either String Document
+parseNull :: String -> Either (String, Bool) Document
 parseNull str =
     let 
-        (b, c) = breakOn '\n' str
+        (firstPart, _) = breakOn '\n' str
     in 
-        case trim b of 
+        case trim firstPart of 
             "null" -> Right DNull
-            _ -> Left (b ++ "$")
+            _ -> Left (firstPart, True)   
 
 
-parseMap :: String -> Either String [(String, Document)]
+parseMap :: String -> Either (String, Bool) [(String, Document)]
 parseMap str
-      | length (trim b) == 2 && head' (trim b) == Just '{' && last' (trim b) == Just '}' = Right []
-      | last' (trim b) /= Just ':' &&  possibleValue /= [] && head'(trim key) /= Just '-' =  
+      | length (trim firstPart) == 2 && head' (trim firstPart) == Just '{' && last' (trim firstPart) == Just '}' = Right []
+      | last' (trim firstPart) /= Just ':' &&  possibleValue /= [] && head'(trim key) /= Just '-' && elem ':' possibleValue == False =  
         case getValue possibleValue of 
             Left msg -> Left msg
             Right value -> do
                 a <- Right (modifiedKey, value)
                 (a:) <$> continueRec
-      | last' (trim b) == Just ':' &&  null possibleValue && head' (modifiedKey) /= Just '-'=
-        case getValue c of 
+      | last' (trim firstPart) == Just ':' &&  null possibleValue && head' (modifiedKey) /= Just '-'
+        && if head' (trim secondPart) == Just '-' then (countSpacesFront firstPart == countSpacesFront secondPart) else (countSpacesFront firstPart == countSpacesFront secondPart - 2) =
+        case getValue secondPart of 
             Left msg -> Left msg
             Right value -> do
                 a <- Right (modifiedKey, value)
                 (a:) <$> continueRec        
-      | otherwise = Left b
-      where (b, c) = breakOn '\n' str
-            (key, possibleValue) = breakOn ':' b
+      | otherwise = Left (firstPart, False)
+      where (firstPart, secondPart) = breakOn '\n' str
+            (key, possibleValue) = breakOn ':' firstPart
             rest = findSameLevelMap (str, str)
             modifiedKey = if ((head' (trim key) == Just '\'' && last' (trim key) == Just '\'')
                || (head' (trim key) == Just '\"' && last' (trim key) == Just '\"')) then (removeLast $ removeFirst (trim key)) else (trim key)
             continueRec = if null rest then Right [] else parseMap rest
 
 
-parseList :: String -> Either String [Document]
+parseList :: String -> Either (String, Bool) [Document]
 parseList str
-        | length (trim b) == 2 && head' (trim b) == Just '[' && last' (trim b) == Just ']' = Right []
-        | head' (trim b) == Just '-' =
-          if lastChar == Just '-'
-          then if countSpacesFront b < countSpacesFront c
-               then (:) <$>  getValue c <*> if null rest then Right [] else parseList rest
-               else Left b
+        | length (trim firstPart) == 2 && head' (trim firstPart) == Just '[' && last' (trim firstPart) == Just ']' = Right []
+        | length (trim firstPart) > 1 && (trim firstPart) !! 0 == '-' && (trim firstPart) !! 1 /= ' ' = Left (firstPart, False)
+        | head' (trim firstPart) == Just '-' =
+          if last' firstPart == Just '-'
+          then if countSpacesFront firstPart < countSpacesFront secondPart
+               then (:) <$>  getValue secondPart <*> if null rest then Right [] else parseList rest
+               else Left (firstPart, False)
           else (:) <$>  getValue (replaceFirstDash '-' str) <*> if null rest then Right [] else parseList rest
-        | otherwise = Left b
-        where (b, c) = breakOn '\n' str
+        | otherwise = Left (firstPart, False)
+        where (firstPart, secondPart) = breakOn '\n' str
               rest = findSameLevelList (str, str)
-              lastChar = last' b
-
+            
 
 removeFirst :: [a] -> [a]
 removeFirst myList =
     case myList of
       [] -> []
-      x : xs -> xs
+      _ : xs -> xs
 
 removeLast :: [a] -> [a]
 removeLast [] = []
-removeLast [h] = []
+removeLast [_] = []
 removeLast (h:t) = h : removeLast t
 
 breakOn :: Char -> String -> (String,String)
@@ -130,10 +132,9 @@ breakOn s str =
     in 
         (b, removeFirst c)
 
-
 head' :: [a] -> Maybe a
 head' []     = Nothing
-head' (x:xs) = Just x
+head' (x:_) = Just x
 
 
 countSpacesFront :: String -> Int
@@ -148,11 +149,6 @@ convertToDMap (Left msg) = Left msg
 convertToDList :: Either a [Document] -> Either a Document
 convertToDList (Right doc) = Right (DList doc)
 convertToDList (Left msg) = Left msg
-
-
-getMessage :: Either a b -> a
-getMessage (Left msg) = msg
-
 
 last' :: [a] -> Maybe a
 last' [x] = Just x --base case is when there's just one element remaining
@@ -184,6 +180,11 @@ trim :: String -> String
 trim = f . f
   where f = reverse . dropWhile isSpace
 
+fromLeft :: Either (String, Bool) b -> (String, Bool)
+fromLeft (Left a) = a
+fromLeft _ = ("", False)
+
+
 replaceFirstDash :: Char -> [Char] -> [Char]
 replaceFirstDash _ [] = [] 
 replaceFirstDash a (x:xs) | a == x    = " " ++ xs 
@@ -203,10 +204,10 @@ instance FromDocument GameStart where
     --fromDocument doc = Left (show doc)
     fromDocument (DMap initState) = extractInitState
         where extractInitState
-                | numberOfHints == -1 = Left "1"
-                | (length occupiedCols /= 10) || (find (-1) occupiedCols) = Left "2"
-                | (length occupiedRows /= 10) || (find (-1) occupiedRows) = Left "3"
-                | otherwise = Right  (GameStart numberOfHints occupiedCols occupiedRows)
+                | numOfHints == -1 = Left "Invalid document"
+                | (length occupCols /= 10) || (find (-1) occupCols) = Left "Invalid document"
+                | (length occupRows /= 10) || (find (-1) occupRows) = Left "Invalid document"
+                | otherwise = Right  (GameStart numOfHints occupCols occupRows)
             
               getDocByStringFromMap initStateList string = foldl (\acc (s, d) -> if s == string then d else acc) DNull initStateList 
             
@@ -220,17 +221,17 @@ instance FromDocument GameStart where
               getListFromDList (DList l) = l
               getListFromDList _ = []
             
-              occupiedColsDInts = getListFromDList occupiedColsDList
-              occupiedRowsDInts = getListFromDList occupiedRowsDList
+              occupColsDInts = getListFromDList occupiedColsDList
+              occupRowsDInts = getListFromDList occupiedRowsDList
             
               getNumberOfHints (DInteger dint) = getIntFromDInt (DInteger dint)
               getNumberOfHints _ = -1
-              numberOfHints = getNumberOfHints numberOfHintsDInt
+              numOfHints = getNumberOfHints numberOfHintsDInt
             
               transformList list = map getIntFromDInt list
             
-              occupiedCols = transformList occupiedColsDInts
-              occupiedRows = transformList occupiedRowsDInts
+              occupCols = transformList occupColsDInts
+              occupRows = transformList occupRowsDInts
     fromDocument initState = Left  (show initState)
 
 
@@ -257,8 +258,8 @@ instance FromDocument Hint where
     --fromDocument doc = Left (show doc)
     fromDocument (DMap h) = extractHints
         where extractHints
-                | find (-1,-1) listOfCoords = Left "4"
-                | otherwise = Right (Hint listOfCoords)
+                | find (-1,-1) listOfCoordinates = Left "Invalid document"
+                | otherwise = Right (Hint listOfCoordinates)
               hintCoordsDMap = getDocByStringFromMap (DMap h) "coords"
 
               getDocByStringFromMap (DMap hintList) string = foldl (\acc (s, d) -> if s == string then d else acc) DNull hintList
@@ -279,7 +280,7 @@ instance FromDocument Hint where
       
               getListOfCoords (DList dlist) = map extractCoords dlist
               getListOfCoords _ = [(-1, -1)]
-              listOfCoords = getListOfCoords listOfDMaps
+              listOfCoordinates = getListOfCoords listOfDMaps
 
               extractCoords (DMap dMapOfCoordTuples)
                  | rowDInt == DNull || colDInt == DNull  = (-1, -1)
@@ -299,4 +300,5 @@ instance FromDocument Hint where
 -- Errors are not reported since GameStart is already totally valid adt
 -- containing all fields needed
 hint :: State -> Hint -> State
-hint (State occupied rows cols hints) (Hint listOfCoords) = State (nub (occupied ++ listOfCoords)) rows cols hints
+hint (State occ r c h) (Hint hints) = State (nub (occ ++ fmap addOne hints)) r c h
+    where addOne (a, b) = (a+1, b+1)
