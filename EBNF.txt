@@ -1,14 +1,14 @@
 (* EXTENDED STANDART BNF WITH PARAMETERIZED RULES - PARAMETERS HELP WITH INDENTATION *)
 
-document = DMap(0) | DList(0) | DString | DInt | DNull | "{}" | "()"
+document = DMap(0) | DList(0) | DString | DInt | DNull | emptyDMap | emptyDList;
 
 (* DMap rules *)
 (* DMap consists of one or more dmap elements*)
 DMap(n) = DMap element(n), {DMap element(n)};
 
-DMap element(n) = " " * n, key, ":", {" "}, (Single line DMap value, "\n") | "\n", Multi line DMap value(n + 2);
+DMap element(n) = space * n, key, colon, {space}, (Single line DMap value, newline) | newline, Multi line DMap value(n + 2);
 
-Single line DMap value = DString | DInt | DNull | "{}" | "[]";
+Single line DMap value = DString | DInt | DNull | emptyDMap | emptyDList;
 Multi line DMap value(n) = DMap(n) | DList(n - 2);
 
 
@@ -16,24 +16,33 @@ Multi line DMap value(n) = DMap(n) | DList(n - 2);
 (* DList consists of one or more dlist elements*)
 DList(n) = DList element(n), {DList element(n)};
 
-DList element(n) = " " * n, "-", Multi line DList value(n + 2) | (one or more space, Single line DList value, "\n"))
+DList element(n) = space * n, dash, Multi line DList value(n + 2) | (one or more space, Single line DList value, "\n"));
 
-Single line DList value = DString | DInt | DNull | "{}" | "[]";
-Multi line DList value(n) = DMap in list(n) | "\n", DList(n)
+Single line DList value = DString | DInt | DNull | emptyDMap | emptyDList;
+Multi line DList value(n) = DMap in list(n) | newline, DList(n);
 
 (* DMap in list has unique rules to only have one space before first key-value pair *)
-DMap in list(n) = DMap element(1) | DMap element(1), DMap(n)
+DMap in list(n) = DMap element(1) | DMap element(1), DMap(n);
 
 
 (* Document literal rules *)
-DInt = ["-"], ( 0 | (1 | 2 | 2 | 4 | 5 | 6 | 7 | 8 | 9), DInt)
-DNull = "null"
-DString = ("\"", quoted string text , "\"") | ("\'", quoted string text , "\'") | unquoted string text
-quoted string text = {letter | digit | basic symbol | " "}
-unquoted string text = (letter | digit | basic symbol) | (unquoted string text, (letter | digit | basic symbol | " "))
+DInt = [dash], ( zero | digit, DInt);
+DNull = "null";
+DString = (double quote, quoted string text , double quote) | (single quote, quoted string text , single quote) | unquoted string text;
+quoted string text = {letter | digit | basic symbol | space};
+unquoted string text = (letter | digit | basic symbol) | (unquoted string text, (letter | digit | basic symbol | space));
+emptyDMap = "{}";
+emptyDList = "[]";
 
-letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
-digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-basic symbol = "\\" | "\"" | "\'" | "-" | "|" | "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "." | "/" | ";" | ">" | "=" | "<" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "}" | "~" |
+letter = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I" | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R" | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z" | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z";
+digit = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";
+zero = "0";
+basic symbol = "\\" | "\"" | "\'" | "-" | "|" | "!" | "#" | "$" | "%" | "&" | "(" | ")" | "*" | "+" | "," | "." | "/" | ";" | ">" | "=" | "<" | "?" | "@" | "[" | "]" | "^" | "_" | "`" | "{" | "}" | "~";
+colon = ":";
+space = " ";
+newline = "\n";
+dash = "-";
+single quote = "\'";
+double quote = "\"";
 
-one or more space = " ", {" "}
+one or more space = space, {space};
