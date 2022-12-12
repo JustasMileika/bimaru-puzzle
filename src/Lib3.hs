@@ -74,29 +74,56 @@ parseNull str =
             _ -> Left (firstPart, True)   
 
 
+
+parseMapKey :: String -> Either String (String, String)
+parseMapKey str =
+    let 
+        prefix = takeWhile (':' /=) str
+    in
+        case trim prefix of
+            [] -> Left (fst (breakOn '\n' str))
+            _ -> Right (prefix, drop (length prefix) str)
+
+parseColon :: String -> String -> Either String String
+parseColon str [] = Left str
+parseColon _ (x:xs) 
+                  | ':' == x = Right xs
+                  | otherwise = Left (x:xs)
+
 parseMap :: String -> Either (String, Bool) [(String, Document)]
 parseMap str
-      | length (trim firstPart) == 2 && head' (trim firstPart) == Just '{' && last' (trim firstPart) == Just '}' = Right []
-      | last' (trim firstPart) /= Just ':' &&  possibleValue /= [] && head'(trim key) /= Just '-' && elem ':' possibleValue == False =  
-        case getValue possibleValue of 
-            Left msg -> Left msg
-            Right value -> do
-                a <- Right (modifiedKey, value)
-                (a:) <$> continueRec
-      | last' (trim firstPart) == Just ':' &&  null possibleValue && head' (modifiedKey) /= Just '-'
-        && if head' (trim secondPart) == Just '-' then (countSpacesFront firstPart == countSpacesFront secondPart) else (countSpacesFront firstPart == countSpacesFront secondPart - 2) =
-        case getValue secondPart of 
-            Left msg -> Left msg
-            Right value -> do
-                a <- Right (modifiedKey, value)
-                (a:) <$> continueRec        
-      | otherwise = Left (firstPart, False)
-      where (firstPart, secondPart) = breakOn '\n' str
-            (key, possibleValue) = breakOn ':' firstPart
-            rest = findSameLevelMap (str, str)
-            modifiedKey = if ((head' (trim key) == Just '\'' && last' (trim key) == Just '\'')
-               || (head' (trim key) == Just '\"' && last' (trim key) == Just '\"')) then (removeLast $ removeFirst (trim key)) else (trim key)
-            continueRec = if null rest then Right [] else parseMap rest
+       | length (trim firstPart) == 2 && head' (trim firstPart) == Just '{' && last' (trim firstPart) == Just '}' = Right []
+       | otherwise = 
+         case getMap of
+            Left msg -> Left (msg, False)
+            Right (key, stringValue) 
+              | stringValue /= [] && head'(trim key) /= Just '-' ->
+                                 case getValue stringValue of 
+                                      Left msg -> Left msg
+                                      Right value -> do
+                                       a <- Right (key, value)
+                                       (a:) <$> continueRec                      
+            Right (key, [])                           
+              | head' (trim key) /= Just '-' &&
+                                 if head' (trim secondPart) == Just '-'
+                                 then(countSpacesFront firstPart == countSpacesFront secondPart)
+                                 else (countSpacesFront firstPart == countSpacesFront secondPart - 2) ->
+                                 case getValue secondPart of 
+                                      Left msg -> Left msg
+                                      Right value -> do
+                                        a <- Right (key, value)
+                                        (a:) <$> continueRec
+            _ -> Left (firstPart, False)
+       where (firstPart, secondPart) = breakOn '\n' str
+             rest = findSameLevelMap (str, str)      
+             continueRec = if null rest then Right [] else parseMap rest
+             getMap = do
+                      (key, colonAndValue) <- parseMapKey (fst (breakOn '\n' str))
+                      (value) <- parseColon key colonAndValue
+                      return (if ((head' (trim key) == Just '\'' && last' (trim key) == Just '\'')
+                                           || (head' (trim key) == Just '\"' && last' (trim key) == Just '\"'))
+                                           then (removeLast $ removeFirst (trim key)) else (trim key), value)                               
+
 
 
 parseList :: String -> Either (String, Bool) [Document]
