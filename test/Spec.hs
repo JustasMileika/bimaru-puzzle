@@ -61,9 +61,9 @@ fromYamlTests = testGroup "Document from yaml"
            Right (DMap [("key1", DMap [("key2", DList [DInteger 1, DMap [("key3", DList [DInteger 1, DInteger 3, DNull, DMap [("", DNull)], DMap []]),
            ("key4", DString "")], DNull])]), ("key5", DList [])])
       ,testCase "Invalid indentation of map" $
-        parseDocument "key:\nkey2: null\n" @?= Left "Could not parse from line: key:"
+        parseDocument "key:\nkey2: null\n" @?= Left "Could not parse DInteger. Could not parse DNull. Could not parse DString. Could not parse DList. Could not parse DMap. From line: key:\nkey2: null\n"
       ,testCase "Invalid indentation of list" $
-        parseDocument "key:\n - 1\n" @?= Left "Could not parse from line: key:"           
+        parseDocument "key:\n - 1\n" @?= Left "Could not parse DInteger. Could not parse DNull. Could not parse DString. Could not parse DList. Could not parse DMap. From line: key:\n - 1\n"           
     -- IMPLEMENT more test cases:
     -- * other primitive types/values
     -- * nested types

@@ -18,10 +18,11 @@ import Control.Applicative((<|>))
 -- IMPLEMENT
 -- Parses a document from yaml
 parseDocument :: String -> Either String Document 
-parseDocument str  = fst $ runState ( runExceptT getValue) str
-
-parseDocument' :: String -> (Either String Document, String) 
-parseDocument' = runState ( runExceptT getValue)
+parseDocument str = 
+  let (a, b) =  runState (runExceptT getValue) str
+  in case a of
+    Left msg -> Left $ msg ++ "From line: " ++ b
+    Right a' -> Right a'
 
 getValue :: Parser Document
 getValue =  parseInt <|> parseNull <|> parseString <|> parseList <|> parseMap
@@ -227,6 +228,21 @@ last' (_:xs) = last' xs --if there's anything in the head, continue until there'
 last' [] = Nothing
 
 
+trim :: String -> String
+trim = f . f
+  where f = reverse . dropWhile isSpace
+
+fromLeft :: Either (String, Bool) b -> (String, Bool)
+fromLeft (Left a) = a
+fromLeft _ = ("", False)
+
+
+replaceFirstDash :: Char -> [Char] -> [Char]
+replaceFirstDash _ [] = [] 
+replaceFirstDash a (x:xs) | a == x    = " " ++ xs 
+                     | x /= ' '  = x:xs
+                     | otherwise = x : replaceFirstDash a xs
+
 findSameLevelMap :: (String, String) -> String
 findSameLevelMap (initial, temp)
    | null (snd (breakOn '\n' initial)) || null (snd (breakOn '\n' temp))= []
@@ -244,23 +260,7 @@ findSameLevelList (initial, temp)
    | countSpacesFront initial == countSpacesFront (snd (breakOn '\n' temp)) 
      && head' (trim initial) == head' (trim (snd (breakOn '\n' temp))) = snd (breakOn '\n' temp)
    | countSpacesFront initial > countSpacesFront (snd (breakOn '\n' temp)) = []
-   | otherwise = findSameLevelList (initial, snd (breakOn '\n' temp))
-
-
-trim :: String -> String
-trim = f . f
-  where f = reverse . dropWhile isSpace
-
-fromLeft :: Either (String, Bool) b -> (String, Bool)
-fromLeft (Left a) = a
-fromLeft _ = ("", False)
-
-
-replaceFirstDash :: Char -> [Char] -> [Char]
-replaceFirstDash _ [] = [] 
-replaceFirstDash a (x:xs) | a == x    = " " ++ xs 
-                     | x /= ' '  = x:xs
-                     | otherwise = x : replaceFirstDash a xs   
+   | otherwise = findSameLevelList (initial, snd (breakOn '\n' temp))                    
 
 -- IMPLEMENT
 -- Change right hand side as you wish
