@@ -1,20 +1,28 @@
 # bimaru-client
+How to run:
+- stack exec spock-rest-exe
+- stack exec bimaru-client-3 {SOME_TOKEN} .
 
-We will solve [bimaru](https://en.wikipedia.org/wiki/Battleship_(puzzle)) puzzles!
+To cross the puzzle enter:
+toggle 2 1
+toggle 2 10
+toggle 3 3
+toggle 3 4
+toggle 3 5
+toggle 3 7
+toggle 4 7
+toggle 5 3
+toggle 5 4
+toggle 5 5
+toggle 5 7
+toggle 6 7
+toggle 6 10
+toggle 7 10
+toggle 9 8
+toggle 9 10
+toggle 8 2
+toggle 8 3
+toggle 9 5
+toggle 9 6
 
-Steps:
-1. Clone this repository (in the future you will have to merge this repo into your repo multiple times)
-2. Install [GHCup](https://www.haskell.org/ghcup/)
-3. Run `ghcup tui` and install:
-    - GHC 8.10.7
-    - Recommended version of Stack
-    - Recommended version of HLS
-4. (Optional) Install VSCode with Haskell plugin
-5. Run `stack build` to see if everything works
-6. Run `stack run -- $YOUR_TOKEN` play a game
-
-Some other notes:
-- On Windows you might need to install "Msys2"
-- On Linux you might need to install "libtinfo-dev" and "zlib1g-dev"
-- On Linux you might need to use `stack` with version suffix, e.g. `stack-2.7.5`. 
 "# bimaru-client" 
