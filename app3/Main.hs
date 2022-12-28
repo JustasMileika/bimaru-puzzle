@@ -27,7 +27,7 @@ import System.Console.Repline
     evalRepl,
   )
 import System.Environment (getArgs)
-import System.Exit (exitFailure)
+import System.Exit (exitFailure, exitSuccess)
 import System.IO (stderr)
 
 import Data.String.Conversions
@@ -52,7 +52,13 @@ cmd c
       Left e -> liftIO $ fatal $ cs e
       Right st -> liftIO $ Prelude.putStrLn $ Lib1.render $ st
         
-  | trim c == commandCheck = lift get >>= check >>= liftIO . Prelude.putStrLn
+  | trim c == commandCheck = do
+    strRes <- lift get >>= check
+    liftIO $ Prelude.putStrLn strRes
+    case strRes of
+      "Well done!" -> liftIO $ solved $ cs ("Thank You for playing!" :: Text)
+      _ -> return ()
+    
   | commandToggle `L.isPrefixOf` trim c = do
     case tokens c of
       [_] -> liftIO $ Prelude.putStrLn $ "Illegal format, \"" ++ commandToggle ++ " expects at leas one argument"
@@ -117,6 +123,11 @@ fatal :: Text -> IO ()
 fatal msg = do
   TIO.hPutStrLn stderr $ T.concat ["ERROR: ", msg]
   exitFailure
+  
+solved :: Text -> IO ()
+solved msg = do
+  TIO.putStrLn msg
+  exitSuccess
 
 final :: Repl ExitDecision
 final = do

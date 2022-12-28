@@ -24,7 +24,7 @@ convert' (DNull) _ _ = "null"
 convert' (DString "") _ _ = "''"
 convert' (DList []) _ _ = "[]"
 convert' (DMap []) _ _ = "{}"
-convert' (DString str) _ _ = show str
+convert' (DString str) _ _ = {-show-} str
 
 convert' (DMap dmap) indent needToIndent = (foldl mapHelper' "" dmap) 
     where mapHelper' acc (key, (DMap [])) = acc ++ (if needToIndent then (replicate indent ' ') else "") ++ (if key == "" then "''" else key) ++ ": " ++ "{}\n"

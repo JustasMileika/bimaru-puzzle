@@ -13,8 +13,6 @@ import Lib3 ( parseDocument )
 import Types( Document(..), ToDocument, toDocument )
 
 import           Data.Text        (pack)
-
-
 type Api = SpockM () () ServerState ()
 
 type ApiAction a = SpockAction () () ServerState a
@@ -48,17 +46,17 @@ app = do
   post ("game" <//> var <//> "check") $ \token' -> do
     games' <- getState >>= (liftIO . readIORef . games)
     let currGame = getGame' games' token' 
-    
     case currGame of
       Left e -> do
         --setStatus $ Status 400 "Bad Request"
         text $ pack $ renderDocument $ DString e
       Right game -> do
-        if (L.sort (occupied game) == L.sort secret1) || (L.sort (occupied game) == L.sort secret2) then
-          text $ pack $ renderDocument $ DString "Well done!" else
-            text $ pack $ renderDocument $ DString "Try again..."
-          
-    
+        if (L.sort (occupied game) == L.sort secret1) || (L.sort (occupied game) == L.sort secret2)
+        then do 
+          removeGame token'
+          text $ pack $ renderDocument $ DString "Well done!"
+        else text $ pack $ renderDocument $ DString "Try again..."
+  
   post ("game" <//> var) $ \token' -> do
     startGame $ token'
     text $ pack $ renderDocument $ DString token'
@@ -78,6 +76,12 @@ app = do
         text $ pack $ renderDocument $ DString token'
     
     
+removeGame :: String -> ApiAction ()
+removeGame tokenStr = do
+  gamesRef <- games <$> getState
+  liftIO $ atomicModifyIORef' gamesRef $ \gameList ->
+    ((filter (\(Game token'' _) -> token'' /= tokenStr) gameList), ())
+
 startGame :: String -> ApiAction ()
 startGame tokenStr = do
   games' <- getState >>= (liftIO . readIORef . games) :: ApiAction [Game]
@@ -146,3 +150,30 @@ secret1 = [(0, 1), (9, 1), (2, 2), (3, 2), (4, 2), (6, 2), (6, 3), (2, 4), (3, 4
 secret2 :: [(Int, Int)]
 --secret2 = [(2, 1), (2, 10), (3, 3), (3, 4), (3, 5), (3, 7), (4, 7), (5, 3), (5, 4), (5, 5), (5, 7), (6, 7), (6, 10), (7, 10), (9, 8), (9, 10), (8, 5), (8, 6), (9, 2), (9, 3) ]
 secret2 = [(0, 1), (9, 1), (2, 2), (3, 2), (4, 2), (6, 2), (6, 3), (2, 4), (3, 4), (4, 4), (6, 4), (6, 5), (9, 5), (9, 6), (7, 8), (9, 8), (4, 7), (5, 7), (1, 8), (2, 8) ]
+
+
+{-
+toggle commands
+
+toggle 2 1
+toggle 2 10
+toggle 3 3
+toggle 3 4
+toggle 3 5
+toggle 3 7
+toggle 4 7
+toggle 5 3
+toggle 5 4
+toggle 5 5
+toggle 5 7
+toggle 6 7
+toggle 6 10
+toggle 7 10
+toggle 9 8
+toggle 9 10
+toggle 8 2
+toggle 8 3
+toggle 9 5
+toggle 9 6
+
+-}
