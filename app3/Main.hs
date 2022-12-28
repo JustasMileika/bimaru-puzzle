@@ -58,7 +58,7 @@ cmd c
       [_] -> liftIO $ Prelude.putStrLn $ "Illegal format, \"" ++ commandToggle ++ " expects at leas one argument"
       t -> do
         url <- lift get
-        let toggleIndexes = getToggleIndexes t
+        let toggleIndexes = getToggleIndexes $ L.drop 1 t
         case toggleIndexes of
           Left e -> liftIO $ fatal $ cs e
           Right (row, col) -> do
@@ -79,7 +79,7 @@ strToInt :: String -> Either String Int
 strToInt str = do
   let prefix = takeWhile isDigit str
   case prefix of
-    [] -> Left "Empty integer"
+    [] -> Left "Invalid integer"
     _ -> return $ read prefix
 
 tokens :: String -> [String]
