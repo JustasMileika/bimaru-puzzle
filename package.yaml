@@ -21,6 +21,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
+- Spock
 - aeson
 - unordered-containers
 - repline
@@ -37,6 +38,9 @@ dependencies:
 - wreq
 - yaml
 - vector
+- utf8-string
+- http-types
+- mtl
 
 ghc-options:
 - -Wall
@@ -62,6 +66,16 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - bimaru-client
+  
+  bimaru-client-3:
+    main:                Main.hs
+    source-dirs:         app3
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - bimaru-client
   bimaru-client-2:
     main:                Main.hs
     source-dirs:         app2
@@ -71,14 +85,16 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - bimaru-client
-  bimaru-client-3:
+  Spock-rest-exe:
     main:                Main.hs
-    source-dirs:         app3
+    source-dirs:         app
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    
     dependencies:
+    - Spock
     - bimaru-client
 
 tests:

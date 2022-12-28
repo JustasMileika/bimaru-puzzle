@@ -132,3 +132,66 @@ hint (State o r c hl) (DMap h) = State withHints r c hl
                                 
             withHints = nub (o ++ listOfCoords)
 hint _ _ = emptyState
+
+
+
+instance FromDocument State where
+  fromDocument (DMap dmap) = do
+    colList <- getBoardLayout "cols" dmap
+    rowList <- getBoardLayout "rows" dmap
+    occ <- getOccupiedTiles dmap
+    return $ State occ rowList colList 10
+  fromDocument _ = Left "invalid state document"
+  
+  
+getOccupiedTiles :: [(String, Document)] -> Either String [(Int, Int)]
+getOccupiedTiles dmap = do
+  occ' <- getValByKey "occupied" dmap
+  occ <- dlistToList occ'
+  listOfDmapTolistOfPairs occ
+  
+  
+listOfDmapTolistOfPairs :: [Document] -> Either String [(Int, Int)]
+listOfDmapTolistOfPairs list = do
+  sequenceA $ map mapToTuple list
+  
+  
+mapToTuple :: Document -> Either String (Int, Int)
+mapToTuple (DMap dmap) = do
+  col' <- getValByKey "col" dmap
+  row' <- getValByKey "row" dmap
+  colInt <- dintToInt col'
+  rowInt <- dintToInt row'
+  if colInt < 0 || colInt > 9 || rowInt < 0 || rowInt > 9 then
+    Left "invalid indexes" else
+      return (rowInt + 1, colInt + 1)
+mapToTuple _ = Left "dmap needed"
+
+
+dintToInt :: Document -> Either String Int
+dintToInt (DInteger a) = return a
+dintToInt _ = Left "dinteger needed"
+
+dlistToList :: Document -> Either String [Document]
+dlistToList (DList list) = return list
+dlistToList _ = Left "dlist needed"
+
+getBoardLayout :: String -> [(String, Document)] -> Either String [Int]
+getBoardLayout str dmap = do
+  dlist <- getValByKey str dmap
+  listOfDoc <- dlistToList dlist
+  listOfInt <- listOfDintToListOfInt listOfDoc
+  if length listOfInt /= 10 || any (\n -> n < 0 || n > 9) listOfInt then
+    Left "invalid state document" else
+      return listOfInt
+
+
+listOfDintToListOfInt :: [Document] -> Either String [Int]
+listOfDintToListOfInt docList = sequenceA $ map dintToInt docList
+  
+getValByKey :: String -> [(String, Document)] -> Either String Document
+getValByKey str docList = do
+  let res = Prelude.foldl (\acc (str', doc) -> if str' == str then Just doc else acc) Nothing docList
+  case res of
+    Nothing -> Left $ "could not find " ++ str
+    Just d -> Right d

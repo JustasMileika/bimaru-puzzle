@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Types (
-    Document(..), Check(..), Coord(..),
+    Document(..), Check(..), Coord(..), Types.Parser,
     ToDocument, toDocument,
     FromDocument, fromDocument
 ) where
@@ -17,6 +17,10 @@ import Data.String.Conversions
 
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen as Gen
+import Control.Monad.Trans.Except (ExceptT)
+import Control.Monad.Trans.State.Strict (State)
+
+type Parser a = ExceptT String (State String) a
 
 -- Data structure used to post ship allocations
 -- to game server (for check). Do not modify.

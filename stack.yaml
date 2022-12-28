@@ -6,3 +6,9 @@ compiler: ghc-8.10.7
 compiler-check: match-exact
 system-ghc: true
 install-ghc: false
+extra-deps:
+- Spock-0.14.0.0@sha256:7e86ccc9e66ce0fdb84d1dcd328f852d3754c2dbfcb60d0e7e2f1cce2f32f177,3681
+- Spock-core-0.14.0.1@sha256:0a11ece2a8f0fbd6bf741b2e0337f33032af3881a3a3cb72b22f50fae222b1cf,3582
+- reroute-0.7.0.0@sha256:ca982d6c747bee4e089f733cd000b8ccf62fb4312cfb0c5de9c8a33f26e02437,2392
+- stm-containers-1.2@sha256:a887f2e7692b7cf20e0b081e2d66e21076e2bd4b57016ec59c484edfa2d29397,3244
+- stm-hamt-1.2.0.8@sha256:479907a31ed74ecb29ad1a95138632c065b3fef0736234514e0d912975a79fc5,3978
