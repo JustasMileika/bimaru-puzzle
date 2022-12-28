@@ -56,7 +56,7 @@ cmd c
     strRes <- lift get >>= check
     liftIO $ Prelude.putStrLn strRes
     case strRes of
-      "Well done!" -> liftIO $ solved $ cs ("Thank You for playing!" :: Text)
+      "\"Well done!\"" -> liftIO $ solved $ cs ("Thank You for playing!" :: Text)
       _ -> return ()
     
   | commandToggle `L.isPrefixOf` trim c = do
