@@ -2,6 +2,8 @@
 
 Command line bimaru puzzle solving game written with Haskell using Spock framework.
 
+Co-developed with Meinardas Klinkovas in Vilnius University.
+
 ***How to run:***
 - stack exec spock-rest-exe
 - stack exec bimaru-client-3 {SOME_TOKEN} .
